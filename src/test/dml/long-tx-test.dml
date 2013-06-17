@@ -1,0 +1,56 @@
+package pt.ist.longtx.bench;
+
+class Bank {
+    String name;
+}
+
+class Customer {
+    String name;
+}
+
+class Account {
+    Double balance;
+    DateTime opened;
+}
+
+class TransactionRecord {
+    DateTime when;
+    Double amount;
+}
+
+relation DomainRootHasBanks {
+    .pt.ist.fenixframework.DomainRoot playsRole domainRoot;
+    Bank playsRole bank {
+        multiplicity *;
+    }
+}
+
+relation BankHasCustomers {
+    Bank playsRole bank;
+    Customer playsRole customer {
+        multiplicity *;
+    }
+}
+
+relation CustomerHasAccount {
+    Customer playsRole owner {
+        multiplicity *;
+    }
+    Account playsRole account {
+        multiplicity *;
+    }
+}
+
+relation TransactionRecordHasFrom {
+    Account playsRole from;
+    TransactionRecord playsRole outgoingTransaction {
+        multiplicity *;
+    }
+}
+
+relation TransactionRecordHasTo {
+    Account playsRole to;
+    TransactionRecord playsRole incomingTransaction {
+        multiplicity *;
+    }
+}
