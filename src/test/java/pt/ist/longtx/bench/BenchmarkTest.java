@@ -19,6 +19,8 @@ public class BenchmarkTest {
 
     private static final int NUM_ITERS = 1000 * 1000;
 
+    private static final int ITERS_PER_TX = Integer.parseInt(System.getProperty("ITERS_PER_TX", "1"));
+
     private static Customer jack;
     private static Customer jill;
 
@@ -30,8 +32,8 @@ public class BenchmarkTest {
         jack = new Customer("Jack", a);
         jill = new Customer("Jill", a);
 
-        jack.addAccount(new Account(1000d));
-        jill.addAccount(new Account(700d));
+        jack.addAccount(new Account(Double.MAX_VALUE));
+        jill.addAccount(new Account(Double.MAX_VALUE));
 
         //Account shared = new Account(200d);
         //jack.addAccount(shared);
@@ -92,7 +94,9 @@ public class BenchmarkTest {
 
     @Atomic(mode = TxMode.WRITE)
     private void doTransfer(Customer from, Customer to) {
-        from.getAccountSet().iterator().next().transfer(200d, to.getAccountSet().iterator().next());
+        for (int i = 0; i < ITERS_PER_TX; i++) {
+            from.getAccountSet().iterator().next().transfer(200d, to.getAccountSet().iterator().next());
+        }
     }
 
 }
