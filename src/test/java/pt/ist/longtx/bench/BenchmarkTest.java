@@ -1,5 +1,6 @@
 package pt.ist.longtx.bench;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,12 +18,13 @@ public class BenchmarkTest {
 
     private static final Logger logger = LoggerFactory.getLogger(BenchmarkTest.class);
 
-    private static final int NUM_ITERS = 1000 * 1000;
-
-    private static final int ITERS_PER_TX = Integer.parseInt(System.getProperty("ITERS_PER_TX", "1"));
+    private static final int ITERS_PER_TX = Integer.parseInt(System.getProperty("ITERS_PER_TX", "1")) * 1000;
 
     private static Customer jack;
     private static Customer jill;
+
+    private static double regularTx;
+    private static double longTx;
 
     @Atomic
     @BeforeClass
@@ -32,32 +34,23 @@ public class BenchmarkTest {
         jack = new Customer("Jack", a);
         jill = new Customer("Jill", a);
 
-        jack.addAccount(new Account(Double.MAX_VALUE));
-        jill.addAccount(new Account(Double.MAX_VALUE));
+        jack.addAccount(new Account(1000d));
+        jill.addAccount(new Account(1000d));
 
-        //Account shared = new Account(200d);
-        //jack.addAccount(shared);
-        //jill.addAccount(shared);
+        logger.info("Running with {}k iterations", ITERS_PER_TX / 1000);
     }
 
     @Test
-    public void timeWithRegularTransaction() {
+    public void measureRunimeWithinRegularTransaction() {
         long start = System.nanoTime();
-
-        for (int i = 0; i < NUM_ITERS; i++) {
-            if (i % 2 == 0) {
-                doTransfer(jill, jack);
-            } else {
-                doTransfer(jack, jill);
-            }
-        }
-
-        double total = System.nanoTime() - start;
-        logger.info("Test with regular transaction took {} ms", total / (NUM_ITERS * 1e6));
+        double timeInside = doTransfer();
+        double total = regularTx = System.nanoTime() - start;
+        logger.info("Test with regular transaction took {} ms, inside: {} ms. Percentage of time inside: {}", total / 1e6,
+                timeInside / 1e6, (timeInside / total) * 100);
     }
 
     @Test
-    public void testWithinTransactionalContext() {
+    public void measureRuntimeWithinTransactionalContext() {
 
         TransactionalContext context = createContext();
 
@@ -65,21 +58,16 @@ public class BenchmarkTest {
 
         long start = System.nanoTime();
 
-        for (int i = 0; i < NUM_ITERS; i++) {
-            if (i % 2 == 0) {
-                doTransfer(jill, jack);
-            } else {
-                doTransfer(jack, jill);
-            }
-        }
+        double timeInside = doTransfer();
 
-        double total = System.nanoTime() - start;
+        double total = longTx = System.nanoTime() - start;
 
         commitContext(context);
 
         LongTransaction.removeContextFromThread();
 
-        logger.info("Test within transactional context took {} ms", total / (NUM_ITERS * 1e6));
+        logger.info("Test within transactional context took {} ms, inside: {} ms. Percentage of time inside: {}", total / 1e6,
+                timeInside / 1e6, (timeInside / total) * 100);
     }
 
     @Atomic(mode = TxMode.WRITE)
@@ -93,10 +81,21 @@ public class BenchmarkTest {
     }
 
     @Atomic(mode = TxMode.WRITE)
-    private void doTransfer(Customer from, Customer to) {
+    private double doTransfer() {
+        long start = System.nanoTime();
         for (int i = 0; i < ITERS_PER_TX; i++) {
-            from.getAccountSet().iterator().next().transfer(200d, to.getAccountSet().iterator().next());
+            if (i % 2 == 0) {
+                jack.getAccountSet().iterator().next().transfer(200d, jill.getAccountSet().iterator().next());
+            } else {
+                jill.getAccountSet().iterator().next().transfer(200d, jack.getAccountSet().iterator().next());
+            }
         }
+        return System.nanoTime() - start;
+    }
+
+    @AfterClass
+    public static void printDifference() {
+        logger.info("Time proportion: {}", longTx / regularTx);
     }
 
 }
