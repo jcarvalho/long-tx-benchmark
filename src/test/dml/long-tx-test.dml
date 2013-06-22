@@ -20,9 +20,7 @@ class TransactionRecord {
 
 relation DomainRootHasBanks {
     .pt.ist.fenixframework.DomainRoot playsRole domainRoot;
-    Bank playsRole bank {
-        multiplicity *;
-    }
+    Bank playsRole bank;
 }
 
 relation BankHasCustomers {

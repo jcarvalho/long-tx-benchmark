@@ -24,6 +24,7 @@ public class Account extends Account_Base {
     public void transfer(Double amount, Account to) {
         this.withdraw(amount);
         to.deposit(amount);
+        addOutgoingTransaction(new TransactionRecord(to, amount));
     }
 
 }

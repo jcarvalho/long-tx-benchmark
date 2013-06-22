@@ -10,4 +10,12 @@ public class Bank extends Bank_Base {
         this.setDomainRoot(FenixFramework.getDomainRoot());
     }
 
+    public double getTotalMoney() {
+        double money = 0;
+        for (Customer customer : getCustomerSet()) {
+            money += customer.getTotalMoney();
+        }
+        return money;
+    }
+
 }
