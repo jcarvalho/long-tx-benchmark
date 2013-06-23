@@ -1,5 +1,8 @@
 package pt.ist.longtx.bench;
 
+import java.io.FileWriter;
+import java.io.IOException;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -9,6 +12,8 @@ import org.slf4j.LoggerFactory;
 
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
+import pt.ist.fenixframework.backend.jvstm.pstm.VBox;
+import pt.ist.fenixframework.longtx.LongTransaction;
 import pt.ist.fenixframework.longtx.TransactionalContext;
 
 @RunWith(JUnit4.class)
@@ -61,7 +66,21 @@ public class BenchmarkTest {
     }
 
     @Test
-    public void doScript() {
+    public void doRegular() {
+        doScript("regular");
+    }
+
+    @Test
+    public void doLongTx() {
+        TransactionalContext context = createContext();
+        LongTransaction.setContextForThread(context);
+        doScript("long");
+        LongTransaction.removeContextFromThread();
+        commitContext(context);
+    }
+
+    public void doScript(String name) {
+        clearIt();
         createCustomers();
         printTotal();
         shuffleMoney();
@@ -70,6 +89,28 @@ public class BenchmarkTest {
         createCustomers();
         shuffleMoney();
         printTotal();
+        dumpCSV(name + ".csv");
+    }
+
+    @Atomic(mode = TxMode.WRITE)
+    private void clearIt() {
+        bank.getCustomerSet().clear();
+    }
+
+    public static void dumpCSV(String path) {
+        StringBuilder builder = new StringBuilder();
+        for (Long value : VBox.getBoxValueTimes) {
+            builder.append(value);
+            builder.append('\n');
+        }
+        VBox.getBoxValueTimes.clear();
+        try {
+            FileWriter writer = new FileWriter(path);
+            writer.write(builder.toString());
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }
