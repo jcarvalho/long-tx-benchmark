@@ -25,6 +25,8 @@ public class BenchmarkTest {
 
     private static final int ACCOUNTS = 10;
 
+    private static final int NUM_TIMES = 10;
+
     @Atomic
     @BeforeClass
     public static void setup() {
@@ -65,13 +67,15 @@ public class BenchmarkTest {
         }
     }
 
-    @Test
+    // @Test
     public void doRegular() {
+        clearIt();
         doScript("regular");
     }
 
     @Test
     public void doLongTx() {
+        clearIt();
         TransactionalContext context = createContext();
         LongTransaction.setContextForThread(context);
         doScript("long");
@@ -80,16 +84,19 @@ public class BenchmarkTest {
     }
 
     public void doScript(String name) {
-        clearIt();
-        createCustomers();
-        printTotal();
-        shuffleMoney();
-        shuffleMoney();
-        printTotal();
-        createCustomers();
-        shuffleMoney();
-        printTotal();
-        dumpCSV(name + ".csv");
+        long start = System.currentTimeMillis();
+        for (int i = 0; i < NUM_TIMES; i++) {
+            createCustomers();
+            printTotal();
+            shuffleMoney();
+            shuffleMoney();
+            printTotal();
+            createCustomers();
+            shuffleMoney();
+            printTotal();
+        }
+        logger.info("Script took {} ms", System.currentTimeMillis() - start);
+        dumpCSV(name + ".js");
     }
 
     @Atomic(mode = TxMode.WRITE)
@@ -99,10 +106,18 @@ public class BenchmarkTest {
 
     public static void dumpCSV(String path) {
         StringBuilder builder = new StringBuilder();
+        builder.append("var data = [");
+        long i = 0;
         for (Long value : VBox.getBoxValueTimes) {
-            builder.append(value);
-            builder.append('\n');
+            if (i++ % 100 == 0) {
+                builder.append('[');
+                builder.append(i);
+                builder.append(", ");
+                builder.append(value);
+                builder.append("],\n");
+            }
         }
+        builder.append("];");
         VBox.getBoxValueTimes.clear();
         try {
             FileWriter writer = new FileWriter(path);
@@ -112,5 +127,4 @@ public class BenchmarkTest {
             e.printStackTrace();
         }
     }
-
 }
