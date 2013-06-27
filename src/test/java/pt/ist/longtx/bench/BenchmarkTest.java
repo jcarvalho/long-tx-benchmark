@@ -1,8 +1,5 @@
 package pt.ist.longtx.bench;
 
-import java.io.FileWriter;
-import java.io.IOException;
-
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import pt.ist.fenixframework.Atomic;
 import pt.ist.fenixframework.Atomic.TxMode;
-import pt.ist.fenixframework.backend.jvstm.pstm.VBox;
 import pt.ist.fenixframework.longtx.LongTransaction;
 import pt.ist.fenixframework.longtx.TransactionalContext;
 
@@ -96,7 +92,6 @@ public class BenchmarkTest {
             printTotal();
         }
         logger.info("Script took {} ms", System.currentTimeMillis() - start);
-        dumpCSV(name + ".js");
     }
 
     @Atomic(mode = TxMode.WRITE)
@@ -104,27 +99,4 @@ public class BenchmarkTest {
         bank.getCustomerSet().clear();
     }
 
-    public static void dumpCSV(String path) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("var data = [");
-        long i = 0;
-        for (Long value : VBox.getBoxValueTimes) {
-            if (i++ % 100 == 0) {
-                builder.append('[');
-                builder.append(i);
-                builder.append(", ");
-                builder.append(value);
-                builder.append("],\n");
-            }
-        }
-        builder.append("];");
-        VBox.getBoxValueTimes.clear();
-        try {
-            FileWriter writer = new FileWriter(path);
-            writer.write(builder.toString());
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 }
