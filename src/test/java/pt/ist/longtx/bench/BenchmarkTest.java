@@ -63,7 +63,7 @@ public class BenchmarkTest {
         }
     }
 
-    // @Test
+    @Test
     public void doRegular() {
         clearIt();
         doScript("regular");
