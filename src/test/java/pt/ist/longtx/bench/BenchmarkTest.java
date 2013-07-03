@@ -21,7 +21,7 @@ public class BenchmarkTest {
 
     private static final int ACCOUNTS = 10;
 
-    private static final int NUM_TIMES = 10;
+    private static final int NUM_TIMES = 200;
 
     @Atomic
     @BeforeClass
@@ -63,7 +63,7 @@ public class BenchmarkTest {
         }
     }
 
-    @Test
+    // @Test
     public void doRegular() {
         clearIt();
         doScript("regular");
