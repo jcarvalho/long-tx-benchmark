@@ -19,9 +19,9 @@ public class BenchmarkTest {
 
     private static final Logger logger = LoggerFactory.getLogger(BenchmarkTest.class);
 
-    private static final int ACCOUNTS = 10;
+    private static final int ACCOUNTS = Integer.parseInt(System.getProperty("ACCOUNTS","10"));
 
-    private static final int NUM_TIMES = 200;
+    private static final int NUM_TIMES = Integer.parseInt(System.getProperty("ITERATIONS","200"));
 
     @Atomic
     @BeforeClass
@@ -63,13 +63,21 @@ public class BenchmarkTest {
         }
     }
 
-    // @Test
+
+    @Test
+    public void doIt() {
+        if (System.getProperty("REG") != null) {
+            doRegular();
+        } else {
+            doLongTx();
+        }
+    }
+
     public void doRegular() {
         clearIt();
         doScript("regular");
     }
 
-    @Test
     public void doLongTx() {
         clearIt();
         TransactionalContext context = createContext();
@@ -80,6 +88,7 @@ public class BenchmarkTest {
     }
 
     public void doScript(String name) {
+        logger.info("Starting {} benchmark with {} iterations", name, NUM_TIMES);
         long start = System.currentTimeMillis();
         for (int i = 0; i < NUM_TIMES; i++) {
             createCustomers();
