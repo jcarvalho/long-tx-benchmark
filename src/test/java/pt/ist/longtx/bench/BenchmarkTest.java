@@ -1,5 +1,6 @@
 package pt.ist.longtx.bench;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,9 +20,9 @@ public class BenchmarkTest {
 
     private static final Logger logger = LoggerFactory.getLogger(BenchmarkTest.class);
 
-    private static final int ACCOUNTS = Integer.parseInt(System.getProperty("ACCOUNTS","10"));
+    private static final int ACCOUNTS = Integer.parseInt(System.getProperty("ACCOUNTS", "10"));
 
-    private static final int NUM_TIMES = Integer.parseInt(System.getProperty("ITERATIONS","200"));
+    private static final int NUM_TIMES = Integer.parseInt(System.getProperty("ITERATIONS", "200"));
 
     @Atomic
     @BeforeClass
@@ -41,7 +42,6 @@ public class BenchmarkTest {
 
     private static int customerCounter = 0;
 
-    @Atomic(mode = TxMode.WRITE)
     private void createCustomers() {
         for (int i = 0; i < ACCOUNTS; i++) {
             Customer customer = new Customer("Customer " + customerCounter++);
@@ -51,18 +51,15 @@ public class BenchmarkTest {
         }
     }
 
-    @Atomic(mode = TxMode.READ)
     private void printTotal() {
         logger.info("Bank has {} money.", bank.getTotalMoney());
     }
 
-    @Atomic(mode = TxMode.WRITE)
     private void shuffleMoney() {
         for (Customer customer : bank.getCustomerSet()) {
             customer.shuffle();
         }
     }
-
 
     @Test
     public void doIt() {
@@ -87,18 +84,23 @@ public class BenchmarkTest {
         commitContext(context);
     }
 
+    @Atomic(mode = TxMode.WRITE)
+    public void doOperation() {
+        createCustomers();
+        printTotal();
+        shuffleMoney();
+        shuffleMoney();
+        printTotal();
+        createCustomers();
+        shuffleMoney();
+        printTotal();
+    }
+
     public void doScript(String name) {
         logger.info("Starting {} benchmark with {} iterations", name, NUM_TIMES);
         long start = System.currentTimeMillis();
         for (int i = 0; i < NUM_TIMES; i++) {
-            createCustomers();
-            printTotal();
-            shuffleMoney();
-            shuffleMoney();
-            printTotal();
-            createCustomers();
-            shuffleMoney();
-            printTotal();
+            doOperation();
         }
         logger.info("Script took {} ms", System.currentTimeMillis() - start);
     }
@@ -106,6 +108,11 @@ public class BenchmarkTest {
     @Atomic(mode = TxMode.WRITE)
     private void clearIt() {
         bank.getCustomerSet().clear();
+    }
+
+    @AfterClass
+    public static void printVboxCount() {
+        logger.info("Box count: {}", pt.ist.fenixframework.backend.jvstm.pstm.VBox.COUNT);
     }
 
 }
