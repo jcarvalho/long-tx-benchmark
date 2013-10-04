@@ -110,9 +110,4 @@ public class BenchmarkTest {
         bank.getCustomerSet().clear();
     }
 
-    @AfterClass
-    public static void printVboxCount() {
-        logger.info("Box count: {}", pt.ist.fenixframework.backend.jvstm.pstm.VBox.COUNT);
-    }
-
 }
